@@ -49,7 +49,7 @@ module.exports = {
     },
 
     getAboutInstructor: function(req, res) {
-        let query = "SELECT biography, profession FROM instructor WHERE fkUser = ?";
+        let query = "SELECT instructorId, biography, profession FROM instructor WHERE fkUser = ?";
         const id = req.query.id;
         db.query(query, id, function (err, results) {
             if (err) return res.send(err);
@@ -57,19 +57,28 @@ module.exports = {
         })
     },
 
+    addBiography: function(req, res) {
+        let query = "INSERT INTO instructor SET ?";
+        const data = req.body;
+        console.log(data)
+        db.query(query, data, function (err, results) {
+            if (err) return res.send(err);
+            res.status(200).json(results);
+        })
+    },
+
     updateBiography: function(req, res) {
         let query = "UPDATE instructor SET profession = ?, biography = ? WHERE fkUser = ?";
-        const id = req.query.id;
         const data = req.body;
 
-        db.query(query, [ data.profession, data.aboutMe, id ], function (err, results) {
+        db.query(query, [ data.profession, data.biography, data.fkUser ], function (err, results) {
             if (err) return res.send(err);
             res.status(200).json(results);
         })
     },
 
     popularInstructors: function(req, res) {
-        let query = `SELECT u.firstName, u.lastName, u.image, i.instructorId,
+        let query = `SELECT concat(u.firstName, ' ' , u.lastName)as instrFullName, u.image, i.instructorId,
         (SELECT IFNULL(round(avg(rw1.rating), 1), 0) FROM review rw1 JOIN course c1 ON c1.courseId = rw1.fkCourse 
         WHERE c1.fkUser = u.userId) as rating, 
         (SELECT count(*) FROM course c1 WHERE c1.fkUser = u.userId) as noCourses FROM course c2 

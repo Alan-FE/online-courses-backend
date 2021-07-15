@@ -24,14 +24,16 @@ module.exports = {
 
     signIn: function (req, res) {
         const user = req.body;
-        let query = `SELECT userId, firstName, lastName, email, image, role, created 
-        FROM user WHERE email = ? AND password = ?`;
+
+        let query = `SELECT userId, firstName, lastName, email, image, role, created, 
+        isnull(i.instructorId) as aboutMe FROM user u LEFT JOIN instructor i ON i.fkUser = u.userId 
+        WHERE email = ? AND password = ?`;
 
         db.query(query, [user.email, user.password], function (err, results) {
             if (err) return res.status(500).send(err);
             if(results.length == 0) {
                 res.status(401).json({message: "The email address or password is incorrect. Please try again."});
-            }
+            };
             if(!results.length == 0) {
                 const js = JSON.stringify(results[0]);
                 const data = JSON.parse(js);
@@ -54,9 +56,10 @@ module.exports = {
     createUser: function (req, res) {
         let query = "INSERT INTO user SET ?"
         const data= req.body;
-        console.log(data);
-        db.query(query, [data], function (err, results) {
-            if (err) return res.send(err);
+        console.log(data)
+        db.query(query, data, function (err, results) {
+            console.log(results)
+            if (err) return res.status(500).send(err);
             res.status(200).json(results.insertId);
         })
     },
@@ -95,7 +98,7 @@ module.exports = {
     },
 
     getAllUsers: function(req, res) {
-        let query = `SELECT u.userId, u.firstName, u.lastName, u.email, u.image, u.role, u.created FROM user u 
+        let query = `SELECT * FROM user u 
         WHERE u.role <> 'admin'`;
         db.query(query, function (err, results) {
             if (err) return res.send(err);
@@ -111,5 +114,27 @@ module.exports = {
             res.status(200).json(results);
         })
     },
+
+    userDataChanged: function (req, res) {
+        const userId = req.query.id;
+
+        let query = `SELECT userId, firstName, lastName, email, image, role, created, 
+        isnull(i.instructorId) as aboutMe FROM user u LEFT JOIN instructor i ON i.fkUser = u.userId 
+        WHERE u.userId = ?`;
+
+        db.query(query, userId, function (err, results) {
+            if (err) return res.status(500).send(err);
+            const js = JSON.stringify(results[0]);
+            const data = JSON.parse(js);
+            console.log(data);
+
+            const accessToken = jwtMethods.getAccessToken(data);
+            const refreshToken = jwtMethods.getRefreshToken(data);
+            refreshTokens.push(refreshToken);
+            console.log(refreshTokens);
+            res.status(200).json({accessToken: accessToken, refreshToken: refreshToken});
+        })
+    }
+
 
 }

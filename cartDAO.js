@@ -20,23 +20,18 @@ module.exports = {
         let query = "INSERT INTO cart SET ?";
         db.query(query, data, function (err, results) {
             if (err) return res.send(err);
-            res.status(200).json(results);
-        })
-    },
-
-    deleteFromCartById: function(req, res) {
-        let query = "DELETE FROM cart WHERE cartId = ?";
-        const id = req.query.id;
-        console.log(id);
-        db.query(query, id, function (err, results) {
-            if (err) return res.send(err);
-            res.status(200).json(results);
+            res.status(200).json(results.insertId);
         })
     },
 
     clearCart: function(req, res) {
-        let query = "DELETE FROM cart";
-        db.query(query, function (err, results) {
+        let query = "DELETE FROM cart ";
+        const cartId = req.query.id;
+        if(cartId !== "undefined") {
+            query += "WHERE cartId = ?";
+        };
+        console.log(cartId)
+        db.query(query, cartId, function (err, results) {
             if (err) return res.send(err);
             res.status(200).json(results);
         })

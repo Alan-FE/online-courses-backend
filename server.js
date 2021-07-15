@@ -33,6 +33,7 @@ app.get("/get-all-users", userDAO.getAllUsers);
 app.get("/get-user-data", userDAO.getUserData);
 app.get("/get-all-courses", courseDAO.allCoursesAdmin);
 app.get("/dashboard", courseDAO.calculation);
+app.get("/user-data-changed", userDAO.userDataChanged);
 
 app.put("/update-biography", instructorDAO.updateBiography);
 app.put("/update-account", userDAO.updateAccount);
@@ -47,8 +48,8 @@ app.post("/create-course", courseDAO.createCourse);
 app.post("/add-to-cart", cartDAO.addToCart);
 app.post("/buy-course", courseDAO.buyCourse);
 app.post("/add-review", reviewDAO.postReview);
+app.post("/add-biography", instructorDAO.addBiography);
 
-app.delete("/delete-from-cart", cartDAO.deleteFromCartById);
 app.delete("/clear-cart", cartDAO.clearCart);
 app.delete("/delete-course", courseDAO.deleteCourse);
 app.delete("/sign-out", userDAO.signOut);

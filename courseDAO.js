@@ -4,11 +4,11 @@ var func = require("./func.js");
 module.exports = {
 
     getAllCourses: function(req, res) {
-        let query = `SELECT c.courseId, c.courseName, c.image, c.price, u.firstName, u.lastName, u.userId,
-        (SELECT IFNULL(round(avg(rw1.rating), 1), 0) FROM review rw1 WHERE rw1.fkCourse = c.courseId) as rating,
-        (SELECT count(*) FROM review rw2 WHERE rw2.fkCourse = c.courseId) as noRating  
+        let query = `SELECT concat(u.firstName, ' ', u.lastName) as instrFullName, c.courseId, c.courseName, c.image, 
+        c.price, u.userId, (SELECT IFNULL(round(avg(rw1.rating), 1), 0) FROM review rw1 WHERE rw1.fkCourse = c.courseId) 
+        as rating, (SELECT count(*) FROM review rw2 WHERE rw2.fkCourse = c.courseId) as noRating  
         FROM course as c JOIN user u ON u.userId = c.fkUser
-        JOIN instructor i ON i.fkUser = u.userId ORDER BY c.courseName ASC`;
+        JOIN instructor i ON i.fkUser = u.userId`;
 
         db.query(query, function (err, results) {
             if (err) return res.send(err);
@@ -74,9 +74,13 @@ module.exports = {
     },
 
     buyCourse: function(req, res) {
-        let query = "INSERT INTO purchased SET ?";
+        let query = "INSERT INTO purchased (fkUser, fkCourse) values ?";
         let data = req.body;
         console.log(data);
+        if(typeof data[0] === 'number') {
+            let newQuery = "INSERT INTO purchased (fkUser, fkCourse) value (?)";
+            query = newQuery;
+        };
         db.query(query, [data], function (err, results) {
             if (err) return res.send(err);
             res.status(200).json(results);
@@ -95,11 +99,11 @@ module.exports = {
     },
 
     popularCourses: function(req, res) {
-        let query = `SELECT c.courseId, c.courseName, c.image, c.price, u.firstName, u.lastName, 
+        let query = `SELECT concat(u.firstName, ' ', u.lastName) as instrFullName, c.courseId, c.courseName, c.image, c.price, 
         (SELECT round(avg(rw1.rating), 1) FROM review rw1 WHERE rw1.fkCourse = c.courseId) 
         as rating, (SELECT count(*) FROM review rw2 WHERE rw2.fkCourse = c.courseId) as noRating  
         FROM course c JOIN user u ON u.userId = c.fkUser JOIN instructor i ON i.fkUser = u.userId
-        ORDER BY rating DESC LIMIT 5`;
+        ORDER BY rating DESC LIMIT 4`;
         db.query(query, function (err, results) {
             if (err) return res.send(err);
             res.status(200).json(results);
@@ -174,7 +178,7 @@ module.exports = {
         let query = `SELECT count(u.userId) as totalUsers,
         (SELECT  count(c.courseId) FROM course c ) as totalCourses,
         (SELECT sum(c1.price) FROM course c1 JOIN purchased p1 ON p1.fkCourse = c1.courseId) as totalEarnings,
-        (SELECT count(p2.orderId) FROM purchased p2) as totalOrders FROM user u WHERE u.role <> 'admin'`;
+        (SELECT count(p2.orderId) FROM purchased p2) as c FROM user u WHERE u.role <> 'admin'`;
         db.query(query, function (err, results) {
             if (err) return res.send(err);
             res.status(200).json(results);
